@@ -1,0 +1,11 @@
+/Users/andrejkamanin/Documents/online-shopping-/auth-service-spring-boot/src/main/java/it/volta/ts/authservice/AuthserviceApplication.java
+/Users/andrejkamanin/Documents/online-shopping-/auth-service-spring-boot/src/main/java/it/volta/ts/authservice/config/AppProperties.java
+/Users/andrejkamanin/Documents/online-shopping-/auth-service-spring-boot/src/main/java/it/volta/ts/authservice/controller/AuthController.java
+/Users/andrejkamanin/Documents/online-shopping-/auth-service-spring-boot/src/main/java/it/volta/ts/authservice/dto/RegisterRequest.java
+/Users/andrejkamanin/Documents/online-shopping-/auth-service-spring-boot/src/main/java/it/volta/ts/authservice/dto/RegisterResponse.java
+/Users/andrejkamanin/Documents/online-shopping-/auth-service-spring-boot/src/main/java/it/volta/ts/authservice/entity/Role.java
+/Users/andrejkamanin/Documents/online-shopping-/auth-service-spring-boot/src/main/java/it/volta/ts/authservice/entity/User.java
+/Users/andrejkamanin/Documents/online-shopping-/auth-service-spring-boot/src/main/java/it/volta/ts/authservice/repository/UserRepository.java
+/Users/andrejkamanin/Documents/online-shopping-/auth-service-spring-boot/src/main/java/it/volta/ts/authservice/security/SecurityConfig.java
+/Users/andrejkamanin/Documents/online-shopping-/auth-service-spring-boot/src/main/java/it/volta/ts/authservice/service/AuthService.java
+/Users/andrejkamanin/Documents/online-shopping-/auth-service-spring-boot/src/main/java/it/volta/ts/authservice/service/MailService.java
