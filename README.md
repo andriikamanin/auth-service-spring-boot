@@ -37,7 +37,7 @@ A complete authentication microservice built with **Spring Boot**, **PostgreSQL*
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/auth-service-spring-boot.git
+https://github.com/andriikamanin/auth-service-spring-boot.git
 cd auth-service-spring-boot
 ```
 
