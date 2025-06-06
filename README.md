@@ -1,16 +1,21 @@
 # 🛡️ Auth Service – Spring Boot Microservice
 
-This is a basic authentication microservice built with **Spring Boot**, **PostgreSQL**, **Redis**, and **Mailtrap SMTP** for email confirmation. It's designed for integration into a microservices-based system.
+A complete authentication microservice built with **Spring Boot**, **PostgreSQL**, **Redis**, and **Mailtrap SMTP**. Designed for integration into a microservices architecture.
 
 ---
 
 ## 🚀 Features
 
-- User registration with email confirmation
-- Email delivery via Mailtrap SMTP (sandbox)
-- Environment variable support using `.env`
-- Dockerized PostgreSQL and Redis
-- Ready for integration with API Gateway or other services
+- ✅ User registration with email verification
+- 📧 Email delivery via Mailtrap SMTP
+- 🔐 JWT authentication (Access + Refresh tokens)
+- 🔁 Access token refreshing with refresh token
+- 🛠 Password change (requires current password)
+- 🧠 Password recovery and reset
+- 🔓 Logout with refresh token invalidation
+- 🔒 Route protection using `@AuthenticationPrincipal`, `@PreAuthorize`
+- 📦 `.env` support with `java-dotenv`
+- 🐳 Docker setup for PostgreSQL and Redis
 
 ---
 
@@ -18,18 +23,18 @@ This is a basic authentication microservice built with **Spring Boot**, **Postgr
 
 - Java 17+
 - Spring Boot 3+
-- Spring Security
+- Spring Security 6
 - PostgreSQL
 - Redis
 - Mailtrap (SMTP sandbox)
+- JWT
 - Docker / Docker Compose
-- `java-dotenv` for environment variable support
 
 ---
 
-## 📦 Getting Started
+## ⚙️ Getting Started
 
-### 1. Clone the repository
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/yourusername/auth-service-spring-boot.git
@@ -40,71 +45,104 @@ cd auth-service-spring-boot
 
 ### 2. Create `.env` file
 
-Copy the template and update credentials:
-
 ```bash
 cp .env.example .env
 ```
 
-Update values like:
+Then configure your environment variables:
 
-- `MAIL_USERNAME`, `MAIL_PASSWORD` → your [Mailtrap.io](https://mailtrap.io/) credentials
-- `DB_PASSWORD` → your preferred DB password
+```env
+# PostgreSQL
+DB_URL=jdbc:postgresql://localhost:15432/auth_db
+DB_USERNAME=postgres
+DB_PASSWORD=postgres
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# JWT
+JWT_SECRET=your_long_secret_key_here
+
+# Mailtrap
+MAIL_HOST=sandbox.smtp.mailtrap.io
+MAIL_PORT=2525
+MAIL_USERNAME=your_mailtrap_username
+MAIL_PASSWORD=your_mailtrap_password
+MAIL_FROM=no-reply@yourapp.com
+
+# URLs
+BACKEND_BASE_URL=http://localhost:8080
+FRONTEND_BASE_URL=http://localhost:3000
+```
 
 ---
 
-### 3. Start PostgreSQL and Redis via Docker
+### 3. Run PostgreSQL & Redis via Docker
 
 ```bash
 docker compose up -d
 ```
 
-This will start:
-- PostgreSQL at `localhost:15432`
-- Redis at `localhost:6379`
+- PostgreSQL: `localhost:15432`
+- Redis: `localhost:6379`
 
 ---
 
-### 4. Run the application
-
-Make sure Java 17+ and Maven are installed. Then:
+### 4. Run the App
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-If using `java-dotenv`, the `.env` file will be loaded automatically.
+or
 
----
-
-## 📬 Testing email with Mailtrap
-
-1. Go to [Mailtrap.io](https://mailtrap.io/)
-2. Create a new inbox and copy SMTP credentials
-3. Paste them into your `.env`:
-
-```env
-MAIL_USERNAME=your_mailtrap_username
-MAIL_PASSWORD=your_mailtrap_password
+```bash
+mvn spring-boot:run
 ```
 
-You will receive verification emails in the Mailtrap inbox when registering users.
+---
+
+## 📬 Email Testing (Mailtrap)
+
+1. Go to [Mailtrap.io](https://mailtrap.io/)
+2. Create an inbox
+3. Copy SMTP credentials and paste into `.env`
+
+All confirmation/reset emails will appear in Mailtrap.
 
 ---
 
-## 🧪 Example: Register via Postman
+## 🔐 Auth Endpoints
 
-- **POST** `http://localhost:8080/api/auth/register`
-- **Body (JSON)**:
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/auth/register` | Register a user |
+| GET  | `/api/auth/verify?token=` | Email verification |
+| POST | `/api/auth/login` | Login (access + refresh tokens) |
+| POST | `/api/auth/change-password` | Change password |
+| POST | `/api/auth/forgot-password` | Send password reset email |
+| POST | `/api/auth/reset-password?token=` | Reset password |
+| POST | `/api/auth/refresh` | Get new access token |
+| POST | `/api/auth/logout` | Logout (invalidate refresh token) |
 
-```json
+---
+
+## 📦 Example Usage
+
+### Register
+
+```http
+POST /api/auth/register
+Content-Type: application/json
+
 {
   "email": "test@example.com",
   "password": "Test1234!"
 }
 ```
 
-Expected response:
+Response:
 
 ```json
 {
@@ -112,10 +150,56 @@ Expected response:
 }
 ```
 
-You will receive a confirmation link like:
+---
 
+### Login
+
+```http
+POST /api/auth/login
+{
+  "email": "test@example.com",
+  "password": "Test1234!"
+}
 ```
-http://localhost:8080/api/auth/verify?token=abc123
+
+Response:
+
+```json
+{
+  "accessToken": "...",
+  "refreshToken": "..."
+}
+```
+
+---
+
+### Refresh Token
+
+```http
+POST /api/auth/refresh
+{
+  "refreshToken": "..."
+}
+```
+
+---
+
+### Logout
+
+```http
+POST /api/auth/logout
+{
+  "refreshToken": "..."
+}
+```
+
+---
+
+### Protected Request Example
+
+```http
+GET /api/users/me
+Authorization: Bearer {accessToken}
 ```
 
 ---
@@ -127,22 +211,19 @@ src/
 ├── controller/
 ├── service/
 ├── entity/
-├── config/
 ├── dto/
+├── config/
 ├── repository/
 ├── security/
-├── util/
 ```
 
 ---
 
-## 🛑 .env Notice
+## ⚠️ Environment Security
 
-Your `.env` file **must NOT be committed** to the repository. Use `.env.example` to share default configs safely.
+Make sure `.env` is listed in `.gitignore`:
 
-Make sure `.gitignore` includes:
-
-```
+```bash
 .env
 ```
 
@@ -150,4 +231,4 @@ Make sure `.gitignore` includes:
 
 ## 📄 License
 
-MIT (or specify your license)
+MIT (or your preferred license)
