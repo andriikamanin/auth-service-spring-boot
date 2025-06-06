@@ -1,8 +1,7 @@
-// src/pages/ChangePasswordPage.tsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../api/axios";
-
+import { getAccessToken } from "../util/tokenStorage";
 const ChangePasswordPage = () => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -11,14 +10,14 @@ const ChangePasswordPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const accessToken = localStorage.getItem("accessToken");
+      const token = getAccessToken();
       await axios.post(
         "/api/auth/change-password",
         { currentPassword, newPassword },
-        { headers: { Authorization: `Bearer ${accessToken}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       alert("Password changed successfully");
-      navigate("/profile"); // редирект после успешной смены
+      navigate("/profile");
     } catch (error) {
       console.error("Failed to change password", error);
       alert("Error changing password");

@@ -2,6 +2,7 @@ import React from "react";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 import axios from "../api/axios";
+import { getAccessToken } from "../util/tokenStorage";
 
 type DecodedToken = {
   sub: string;
@@ -13,7 +14,7 @@ type DecodedToken = {
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const accessToken = localStorage.getItem("accessToken");
+  const accessToken = getAccessToken();
 
   const decoded: DecodedToken | null = accessToken
     ? jwtDecode<DecodedToken>(accessToken)
@@ -28,10 +29,8 @@ const ProfilePage = () => {
       }
     } catch (error) {
       console.error("Logout request failed", error);
-      // даже если ошибка — всё равно продолжаем logout локально
     } finally {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
+      clearTokens();
       navigate("/login");
     }
   };

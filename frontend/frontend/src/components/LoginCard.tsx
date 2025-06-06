@@ -5,6 +5,7 @@ import axios from "../api/axios";
 const LoginCard = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -13,11 +14,10 @@ const LoginCard = () => {
       const response = await axios.post("/api/auth/login", { email, password });
       const { accessToken, refreshToken } = response.data;
 
-      // Сохраняем токены в localStorage
-      localStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("refreshToken", refreshToken);
+      const storage = rememberMe ? localStorage : sessionStorage;
+      storage.setItem("accessToken", accessToken);
+      storage.setItem("refreshToken", refreshToken);
 
-      // Перенаправляем на страницу профиля
       navigate("/profile");
     } catch (error) {
       console.error("Login failed", error);
@@ -28,12 +28,8 @@ const LoginCard = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900">
       <div className="max-w-md w-full bg-gradient-to-r from-blue-800 to-purple-600 rounded-xl shadow-2xl overflow-hidden p-8 space-y-8 animate-fadeIn">
-        <h2 className="text-center text-4xl font-extrabold text-white">
-          Welcome
-        </h2>
-        <p className="text-center text-gray-200">
-          Sign in to your account
-        </p>
+        <h2 className="text-center text-4xl font-extrabold text-white">Welcome</h2>
+        <p className="text-center text-gray-200">Sign in to your account</p>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="relative">
             <input
@@ -48,9 +44,9 @@ const LoginCard = () => {
             />
             <label
               htmlFor="email"
-              className="absolute left-0 -top-3.5 text-gray-500 text-sm transition-all \
-                peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 \
-                peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-purple-500 peer-focus:text-sm"
+              className="absolute left-0 -top-3.5 text-gray-500 text-sm transition-all
+              peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400
+              peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-purple-500 peer-focus:text-sm"
             >
               Email address
             </label>
@@ -69,9 +65,9 @@ const LoginCard = () => {
             />
             <label
               htmlFor="password"
-              className="absolute left-0 -top-3.5 text-gray-500 text-sm transition-all \
-                peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 \
-                peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-purple-500 peer-focus:text-sm"
+              className="absolute left-0 -top-3.5 text-gray-500 text-sm transition-all
+              peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400
+              peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-purple-500 peer-focus:text-sm"
             >
               Password
             </label>
@@ -81,11 +77,15 @@ const LoginCard = () => {
             <label className="flex items-center text-sm text-gray-200">
               <input
                 type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
                 className="form-checkbox h-4 w-4 text-purple-600 bg-gray-800 border-gray-300 rounded"
               />
               <span className="ml-2">Remember me</span>
             </label>
-            <Link to="/forgot-password" className="text-sm text-purple-200 hover:underline">Forgot your password? </Link>
+            <Link to="/forgot-password" className="text-sm text-purple-200 hover:underline">
+              Forgot your password?
+            </Link>
           </div>
 
           <button
