@@ -130,4 +130,36 @@ public class AuthService {
 
         redisTemplate.delete("refresh:" + user.getId()); // invalidate refresh token
     }
+
+
+    public void forgotPassword(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        String token = UUID.randomUUID().toString();
+        String redisKey = "password:reset:" + token;
+        redisTemplate.opsForValue().set(redisKey, user.getId().toString(), Duration.ofHours(1));
+
+        String resetLink = appProperties.getFrontendBaseUrl() + "/reset-password?token=" + token;
+        String message = "Click the link to reset your password:\n\n" + resetLink;
+
+        mailService.sendEmail(user.getEmail(), "Reset your password", message);
+    }
+
+    public void resetPassword(String token, String newPassword) {
+        String redisKey = "password:reset:" + token;
+        String userIdStr = redisTemplate.opsForValue().get(redisKey);
+
+        if (userIdStr == null) {
+            throw new IllegalArgumentException("Invalid or expired token");
+        }
+
+        UUID userId = UUID.fromString(userIdStr);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("User not found"));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        redisTemplate.delete(redisKey);
+    }
 }

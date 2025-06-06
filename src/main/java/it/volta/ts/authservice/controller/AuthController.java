@@ -56,9 +56,23 @@ public class AuthController {
         authService.changePassword(principal.user(), request);
         return ResponseEntity.ok("Password changed successfully");
     }
+
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request.email());
+        return ResponseEntity.ok("Password reset link sent to your email.");
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request.token(), request.newPassword());
+        return ResponseEntity.ok("Password successfully reset.");
+    }
+
     // В будущем здесь появятся:
     // - /refresh
     // - /logout
-    // - /forgot-password
+
 
 }
