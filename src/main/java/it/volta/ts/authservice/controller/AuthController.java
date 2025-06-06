@@ -24,9 +24,14 @@ public class AuthController {
         ));
     }
 
+    @GetMapping("/verify")
+    public ResponseEntity<String> verifyEmail(@RequestParam("token") String token) {
+        authService.verifyEmail(token);
+        return ResponseEntity.ok("Email successfully verified!");
+    }
+
     // В будущем здесь появятся:
     // - /login
-    // - /verify
     // - /refresh
     // - /logout
     // - /forgot-password

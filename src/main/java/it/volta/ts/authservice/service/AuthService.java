@@ -57,4 +57,26 @@ public class AuthService {
         // 7. Отправка письма
         mailService.sendEmail(user.getEmail(), "Подтверждение регистрации", message);
     }
+
+
+    public void verifyEmail(String token) {
+        String redisKey = "email:verify:" + token;
+        String userIdStr = redisTemplate.opsForValue().get(redisKey);
+
+        if (userIdStr == null) {
+            throw new IllegalArgumentException("Invalid or expired token");
+        }
+
+        UUID userId = UUID.fromString(userIdStr);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("User not found"));
+
+        if (user.isEmailVerified()) {
+            throw new IllegalStateException("Email is already verified");
+        }
+
+        user.setEmailVerified(true);
+        userRepository.save(user);
+        redisTemplate.delete(redisKey); // cleanup
+    }
 }
