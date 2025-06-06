@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "../api/axios";
 
 const LoginCard = () => {
@@ -27,9 +27,7 @@ const LoginCard = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900">
-      <div
-        className="max-w-md w-full bg-gradient-to-r from-blue-800 to-purple-600 rounded-xl shadow-2xl overflow-hidden p-8 space-y-8 animate-fadeIn"
-      >
+      <div className="max-w-md w-full bg-gradient-to-r from-blue-800 to-purple-600 rounded-xl shadow-2xl overflow-hidden p-8 space-y-8 animate-fadeIn">
         <h2 className="text-center text-4xl font-extrabold text-white">
           Welcome
         </h2>
@@ -50,8 +48,8 @@ const LoginCard = () => {
             />
             <label
               htmlFor="email"
-              className="absolute left-0 -top-3.5 text-gray-500 text-sm transition-all \
-                peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 \
+              className="absolute left-0 -top-3.5 text-gray-500 text-sm transition-all 
+                peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 
                 peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-purple-500 peer-focus:text-sm"
             >
               Email address
@@ -71,8 +69,8 @@ const LoginCard = () => {
             />
             <label
               htmlFor="password"
-              className="absolute left-0 -top-3.5 text-gray-500 text-sm transition-all \
-                peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 \
+              className="absolute left-0 -top-3.5 text-gray-500 text-sm transition-all 
+                peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 
                 peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-purple-500 peer-focus:text-sm"
             >
               Password
@@ -101,10 +99,10 @@ const LoginCard = () => {
         </form>
 
         <div className="text-center text-gray-300">
-          Don't have an account?{" "}
-          <a className="text-purple-300 hover:underline" href="#">
+          Don&apos;t have an account?{" "}
+          <Link className="text-purple-300 hover:underline" to="/register">
             Sign up
-          </a>
+          </Link>
         </div>
       </div>
     </div>
