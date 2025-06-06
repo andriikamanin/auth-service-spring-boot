@@ -159,4 +159,21 @@ public class AuthService {
         String newAccessToken = jwtService.generateAccessToken(user.getId(), user.getEmail(), claims);
         return new LoginResponse(newAccessToken, token); // refresh остаётся тем же
     }
+
+
+    public void logout(String refreshToken) {
+        if (!jwtService.isTokenValid(refreshToken)) {
+            throw new IllegalArgumentException("Invalid refresh token");
+        }
+
+        UUID userId = jwtService.extractUserId(refreshToken);
+        String redisKey = "refresh:" + userId;
+
+        String savedToken = redisTemplate.opsForValue().get(redisKey);
+        if (savedToken == null || !savedToken.equals(refreshToken)) {
+            throw new IllegalStateException("Refresh token not found or already logged out");
+        }
+
+        redisTemplate.delete(redisKey);
+    }
 }
