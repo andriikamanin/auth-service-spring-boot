@@ -70,8 +70,13 @@ public class AuthController {
         return ResponseEntity.ok("Password successfully reset.");
     }
 
+    @PostMapping("/refresh")
+    public ResponseEntity<LoginResponse> refresh(@RequestBody RefreshTokenRequest request) {
+        LoginResponse response = authService.refreshToken(request.refreshToken());
+        return ResponseEntity.ok(response);
+    }
+
     // В будущем здесь появятся:
-    // - /refresh
     // - /logout
 
 

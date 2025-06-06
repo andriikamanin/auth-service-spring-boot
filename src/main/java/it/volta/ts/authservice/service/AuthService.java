@@ -1,24 +1,17 @@
 package it.volta.ts.authservice.service;
 
-
 import it.volta.ts.authservice.config.AppProperties;
-import it.volta.ts.authservice.dto.ChangePasswordRequest;
-import it.volta.ts.authservice.dto.LoginRequest;
-import it.volta.ts.authservice.dto.LoginResponse;
-import it.volta.ts.authservice.dto.RegisterRequest;
+import it.volta.ts.authservice.dto.*;
 import it.volta.ts.authservice.entity.Role;
 import it.volta.ts.authservice.entity.User;
 import it.volta.ts.authservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -32,17 +25,17 @@ public class AuthService {
     private final JwtService jwtService;
 
     private static final Duration VERIFICATION_TOKEN_TTL = Duration.ofHours(24);
+    private static final Duration REFRESH_TOKEN_TTL = Duration.ofDays(30);
+    private static final Duration RESET_TOKEN_TTL = Duration.ofHours(1);
 
+    // Регистрация
     public void register(RegisterRequest request) {
-        // 1. Проверка существующего email
         if (userRepository.existsByEmail(request.email())) {
             throw new IllegalArgumentException("Email уже используется");
         }
 
-        // 2. Генерация никнейма
         String nickname = "user-" + UUID.randomUUID().toString().substring(0, 8);
 
-        // 3. Создание пользователя
         User user = User.builder()
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
@@ -52,43 +45,32 @@ public class AuthService {
 
         userRepository.save(user);
 
-        // 4. Генерация токена
         String token = UUID.randomUUID().toString();
-        String redisKey = "email:verify:" + token;
+        redisTemplate.opsForValue().set("email:verify:" + token, user.getId().toString(), VERIFICATION_TOKEN_TTL);
 
-        // 5. Сохранение токена в Redis с TTL
-        redisTemplate.opsForValue().set(redisKey, user.getId().toString(), VERIFICATION_TOKEN_TTL);
-
-        // 6. Генерация ссылки с dynamic base-url
         String verifyUrl = appProperties.getBackendBaseUrl() + "/api/auth/verify?token=" + token;
-        String message = "Здравствуйте!\n\nПерейдите по ссылке, чтобы подтвердить регистрацию:\n\n" + verifyUrl;
+        String message = "Здравствуйте!\n\nПерейдите по ссылке для подтверждения:\n\n" + verifyUrl;
 
-        // 7. Отправка письма
         mailService.sendEmail(user.getEmail(), "Подтверждение регистрации", message);
     }
 
-
+    // Подтверждение email
     public void verifyEmail(String token) {
-        String redisKey = "email:verify:" + token;
-        String userIdStr = redisTemplate.opsForValue().get(redisKey);
-
-        if (userIdStr == null) {
-            throw new IllegalArgumentException("Invalid or expired token");
-        }
+        String userIdStr = redisTemplate.opsForValue().get("email:verify:" + token);
+        if (userIdStr == null) throw new IllegalArgumentException("Invalid or expired token");
 
         UUID userId = UUID.fromString(userIdStr);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalStateException("User not found"));
 
-        if (user.isEmailVerified()) {
-            throw new IllegalStateException("Email is already verified");
-        }
+        if (user.isEmailVerified()) throw new IllegalStateException("Email is already verified");
 
         user.setEmailVerified(true);
         userRepository.save(user);
-        redisTemplate.delete(redisKey); // cleanup
+        redisTemplate.delete("email:verify:" + token);
     }
 
+    // Логин
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
@@ -105,21 +87,15 @@ public class AuthService {
                 "roles", user.getRoles().stream().map(Enum::name).toList()
         );
 
-        String accessToken = jwtService.generateAccessToken(
-                user.getId(),
-                user.getEmail(),
-                claims
-        );
-
+        String accessToken = jwtService.generateAccessToken(user.getId(), user.getEmail(), claims);
         String refreshToken = jwtService.generateRefreshToken(user.getId());
 
-        String redisKey = "refresh:" + user.getId();
-        redisTemplate.opsForValue().set(redisKey, refreshToken, Duration.ofDays(30));
+        redisTemplate.opsForValue().set("refresh:" + user.getId(), refreshToken, REFRESH_TOKEN_TTL);
 
         return new LoginResponse(accessToken, refreshToken);
     }
 
-
+    // Смена пароля
     public void changePassword(User user, ChangePasswordRequest request) {
         if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
             throw new IllegalArgumentException("Current password is incorrect");
@@ -128,17 +104,16 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
 
-        redisTemplate.delete("refresh:" + user.getId()); // invalidate refresh token
+        redisTemplate.delete("refresh:" + user.getId()); // Отзываем refresh-токен
     }
 
-
+    // Запрос на сброс пароля
     public void forgotPassword(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         String token = UUID.randomUUID().toString();
-        String redisKey = "password:reset:" + token;
-        redisTemplate.opsForValue().set(redisKey, user.getId().toString(), Duration.ofHours(1));
+        redisTemplate.opsForValue().set("password:reset:" + token, user.getId().toString(), RESET_TOKEN_TTL);
 
         String resetLink = appProperties.getFrontendBaseUrl() + "/reset-password?token=" + token;
         String message = "Click the link to reset your password:\n\n" + resetLink;
@@ -146,13 +121,10 @@ public class AuthService {
         mailService.sendEmail(user.getEmail(), "Reset your password", message);
     }
 
+    // Сброс пароля по токену
     public void resetPassword(String token, String newPassword) {
-        String redisKey = "password:reset:" + token;
-        String userIdStr = redisTemplate.opsForValue().get(redisKey);
-
-        if (userIdStr == null) {
-            throw new IllegalArgumentException("Invalid or expired token");
-        }
+        String userIdStr = redisTemplate.opsForValue().get("password:reset:" + token);
+        if (userIdStr == null) throw new IllegalArgumentException("Invalid or expired token");
 
         UUID userId = UUID.fromString(userIdStr);
         User user = userRepository.findById(userId)
@@ -160,6 +132,31 @@ public class AuthService {
 
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-        redisTemplate.delete(redisKey);
+
+        redisTemplate.delete("password:reset:" + token);
+    }
+
+    // Обновление токена доступа
+    public LoginResponse refreshToken(String token) {
+        if (!jwtService.isTokenValid(token)) {
+            throw new IllegalArgumentException("Invalid refresh token");
+        }
+
+        UUID userId = jwtService.extractUserId(token);
+        String savedToken = redisTemplate.opsForValue().get("refresh:" + userId);
+
+        if (savedToken == null || !savedToken.equals(token)) {
+            throw new IllegalStateException("Refresh token not found or does not match");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("User not found"));
+
+        Map<String, Object> claims = Map.of(
+                "roles", user.getRoles().stream().map(Enum::name).toList()
+        );
+
+        String newAccessToken = jwtService.generateAccessToken(user.getId(), user.getEmail(), claims);
+        return new LoginResponse(newAccessToken, token); // refresh остаётся тем же
     }
 }
