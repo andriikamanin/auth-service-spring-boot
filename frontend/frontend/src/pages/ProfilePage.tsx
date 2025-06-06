@@ -1,6 +1,7 @@
 import React from "react";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
+import axios from "../api/axios";
 
 type DecodedToken = {
   sub: string;
@@ -18,6 +19,23 @@ const ProfilePage = () => {
     ? jwtDecode<DecodedToken>(accessToken)
     : null;
 
+  const handleLogout = async () => {
+    try {
+      if (accessToken) {
+        await axios.post("/api/auth/logout", null, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+      }
+    } catch (error) {
+      console.error("Logout request failed", error);
+      // даже если ошибка — всё равно продолжаем logout локально
+    } finally {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      navigate("/login");
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
       <div className="max-w-md w-full p-8 bg-gray-800 rounded-xl shadow-xl space-y-6">
@@ -29,10 +47,17 @@ const ProfilePage = () => {
             <p><strong>User ID:</strong> {decoded.sub}</p>
 
             <button
-              className="mt-4 w-full py-2 px-4 bg-purple-500 hover:bg-purple-700 rounded-md text-white font-semibold"
+              className="w-full py-2 px-4 bg-purple-500 hover:bg-purple-700 rounded-md text-white font-semibold"
               onClick={() => navigate("/change-password")}
             >
               Change Password
+            </button>
+
+            <button
+              className="w-full mt-2 py-2 px-4 bg-red-500 hover:bg-red-700 rounded-md text-white font-semibold"
+              onClick={handleLogout}
+            >
+              Logout
             </button>
           </div>
         ) : (
