@@ -48,7 +48,9 @@ public class AuthService {
         String token = UUID.randomUUID().toString();
         redisTemplate.opsForValue().set("email:verify:" + token, user.getId().toString(), VERIFICATION_TOKEN_TTL);
 
-        String verifyUrl = appProperties.getBackendBaseUrl() + "/api/auth/verify?token=" + token;
+        // ✅ Обновлённая ссылка на frontend
+        String verifyUrl = appProperties.getFrontendBaseUrl() + "/verify-email?token=" + token;
+
         String message = "Здравствуйте!\n\nПерейдите по ссылке для подтверждения:\n\n" + verifyUrl;
 
         mailService.sendEmail(user.getEmail(), "Подтверждение регистрации", message);
