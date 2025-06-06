@@ -74,6 +74,9 @@ MAIL_FROM=no-reply@yourapp.com
 # URLs
 BACKEND_BASE_URL=http://localhost:8080
 FRONTEND_BASE_URL=http://localhost:3000
+
+# JWT Secret
+JWT_SECRET=YourVerySecureSecretKeyThatShouldBeLongEnough123
 ```
 
 ---
@@ -229,6 +232,4 @@ Make sure `.env` is listed in `.gitignore`:
 
 ---
 
-## 📄 License
 
-MIT (or your preferred license)
