@@ -8,6 +8,9 @@ import ChangePasswordPage from "./pages/ChangePasswordPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import EditProfilePage from "./pages/EditProfilePage";
+import SearchProfilePage from "./pages/SearchProfilePage";
+import HomePage from "./pages/HomePage";
+import PublicProfilePage from "./pages/PublicProfilePage";
 
 
 function App() {
@@ -24,9 +27,22 @@ function App() {
         <Route path="/change-password" element={<ChangePasswordPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/search" element={<SearchProfilePage />} />
+        <Route path="/" element={<HomePage />} />
+        <Route path="/u/:nickname" element={<PublicProfilePage />} />
       </Routes>
     </Router>
   );
 }
 
+
+
+
 export default App;
+
+
+
+
+
+
+

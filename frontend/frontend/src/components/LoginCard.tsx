@@ -1,3 +1,5 @@
+// src/components/LoginCard.tsx
+
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authApi } from "../api/axios";
@@ -20,7 +22,7 @@ const LoginCard = () => {
       storage.setItem("accessToken", accessToken);
       storage.setItem("refreshToken", refreshToken);
 
-      navigate("/me");
+      navigate("/"); // перенаправляем на главную
     } catch (error) {
       console.error("Login failed", error);
       alert("Invalid credentials or unverified email.");

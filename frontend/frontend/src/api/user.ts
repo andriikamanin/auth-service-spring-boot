@@ -1,5 +1,4 @@
 // src/api/userApi.ts
-
 import { userApi } from "./axios";
 
 // Получить текущий профиль
@@ -8,10 +7,16 @@ export async function getMyProfile() {
   return res.data;
 }
 
-// Получить публичный профиль по нику
+// Получить публичный профиль по точному нику
 export async function getPublicProfile(nickname: string) {
   const res = await userApi.get(`/api/users/nickname/${nickname}`);
   return res.data;
+}
+
+// Поиск пользователей по части ника
+export async function searchProfiles(query: string) {
+  const res = await userApi.get(`/api/users/search?query=${encodeURIComponent(query)}`);
+  return res.data; // массив профилей
 }
 
 // Обновить профиль
@@ -31,10 +36,10 @@ export async function uploadAvatar(file: File) {
 
   const res = await userApi.post("/api/users/me/avatar", formData, {
     headers: {
-      // ВАЖНО: НЕ УСТАНАВЛИВАЙ Content-Type ВРУЧНУЮ
-      // Axios сам поставит правильный multipart/form-data + boundary
+      // Axios сам установит правильный Content-Type
     },
   });
 
-  return res.data; // URL строки с avatarUrl
+  return res.data; // avatarUrl string
 }
+
