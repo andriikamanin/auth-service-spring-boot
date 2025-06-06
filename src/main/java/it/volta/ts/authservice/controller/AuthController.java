@@ -1,6 +1,8 @@
 package it.volta.ts.authservice.controller;
 
 
+import it.volta.ts.authservice.dto.LoginRequest;
+import it.volta.ts.authservice.dto.LoginResponse;
 import it.volta.ts.authservice.dto.RegisterRequest;
 import it.volta.ts.authservice.dto.RegisterResponse;
 import it.volta.ts.authservice.service.AuthService;
@@ -30,8 +32,13 @@ public class AuthController {
         return ResponseEntity.ok("Email successfully verified!");
     }
 
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
+        LoginResponse tokens = authService.login(request);
+        return ResponseEntity.ok(tokens);
+    }
+
     // В будущем здесь появятся:
-    // - /login
     // - /refresh
     // - /logout
     // - /forgot-password

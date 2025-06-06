@@ -2,6 +2,8 @@ package it.volta.ts.authservice.service;
 
 
 import it.volta.ts.authservice.config.AppProperties;
+import it.volta.ts.authservice.dto.LoginRequest;
+import it.volta.ts.authservice.dto.LoginResponse;
 import it.volta.ts.authservice.dto.RegisterRequest;
 import it.volta.ts.authservice.entity.User;
 import it.volta.ts.authservice.repository.UserRepository;
@@ -11,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -22,6 +25,7 @@ public class AuthService {
     private final MailService mailService;
     private final StringRedisTemplate redisTemplate;
     private final AppProperties appProperties;
+    private final JwtService jwtService;
 
     private static final Duration VERIFICATION_TOKEN_TTL = Duration.ofHours(24);
 
@@ -78,5 +82,36 @@ public class AuthService {
         user.setEmailVerified(true);
         userRepository.save(user);
         redisTemplate.delete(redisKey); // cleanup
+    }
+
+    public LoginResponse login(LoginRequest request) {
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
+
+        if (!user.isEmailVerified()) {
+            throw new IllegalStateException("Please verify your email before logging in");
+        }
+
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new IllegalArgumentException("Invalid credentials");
+        }
+
+        // Преобразуем Set<Role> в List<String>
+        var roleNames = user.getRoles().stream()
+                .map(Enum::name)
+                .toList();
+
+        String accessToken = jwtService.generateAccessToken(
+                user.getId(),
+                user.getEmail(),
+                Map.of("roles", roleNames)
+        );
+
+        String refreshToken = jwtService.generateRefreshToken(user.getId());
+
+        String redisKey = "refresh:" + user.getId();
+        redisTemplate.opsForValue().set(redisKey, refreshToken, Duration.ofDays(30));
+
+        return new LoginResponse(accessToken, refreshToken);
     }
 }
