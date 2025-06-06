@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import axios from "../api/axios";
+import { authApi } from "../api/axios"; // ✅ заменили axios на authApi
 
 const VerifyEmailPage = () => {
   const [searchParams] = useSearchParams();
@@ -18,7 +18,7 @@ const VerifyEmailPage = () => {
 
     const verifyEmail = async () => {
       try {
-        await axios.get(`/api/auth/verify?token=${token}`);
+        await authApi.get(`/api/auth/verify?token=${token}`);
         setStatus("success");
         setTimeout(() => navigate("/login"), 3000);
       } catch (error) {

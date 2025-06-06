@@ -1,43 +1,43 @@
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import { getAccessToken, getRefreshToken, saveTokens, clearTokens } from "../util/tokenStorage";
 
-type DecodedToken = {
-  exp: number;
-};
+type DecodedToken = { exp: number };
 
-const api = axios.create({
-  baseURL: "http://localhost:8080", // URL вашего Spring Boot бекенда
-  withCredentials: false,
+const authApi = axios.create({
+  baseURL: import.meta.env.VITE_AUTH_API_URL || "http://localhost:8080",
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-api.interceptors.request.use(
+const userApi = axios.create({
+  baseURL: import.meta.env.VITE_USER_API_URL || "http://localhost:8081",
+  withCredentials: true,
+  
+});
+
+// === Interceptor для userApi (автоматическое обновление access токена) ===
+userApi.interceptors.request.use(
   async (config) => {
-    let accessToken = localStorage.getItem("accessToken");
-    const refreshToken = localStorage.getItem("refreshToken");
+    let accessToken = getAccessToken();
+    const refreshToken = getRefreshToken();
 
     if (accessToken) {
       try {
         const decoded: DecodedToken = jwtDecode(accessToken);
         const now = Date.now() / 1000;
 
-        // Проверка, истёк ли токен (с запасом 30 сек)
         if (decoded.exp < now + 30 && refreshToken) {
-          const response = await axios.post("http://localhost:8080/api/auth/refresh", {
-            refreshToken,
-          });
-
-          if (accessToken && refreshToken) {
-            localStorage.setItem("accessToken", accessToken);
-            localStorage.setItem("refreshToken", refreshToken);
-          }
+          const response = await authApi.post("/api/auth/refresh", { refreshToken });
+          const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data;
+          saveTokens(newAccessToken, newRefreshToken);
+          accessToken = newAccessToken;
         }
       } catch (err) {
-        console.error("Failed to refresh token", err);
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
+        console.error("❌ Failed to refresh token", err);
+        clearTokens();
       }
     }
 
@@ -50,4 +50,4 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-export default api;
+export { authApi, userApi };

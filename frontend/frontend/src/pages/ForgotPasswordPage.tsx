@@ -1,5 +1,7 @@
+// src/pages/ForgotPasswordPage.tsx
+
 import React, { useState } from "react";
-import axios from "../api/axios";
+import { authApi } from "../api/axios"; // ✅ Исправленный импорт
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState("");
@@ -8,7 +10,7 @@ const ForgotPasswordPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post("/api/auth/forgot-password", { email });
+      await authApi.post("/api/auth/forgot-password", { email }); // ✅ Используем authApi
       setSubmitted(true);
     } catch (error) {
       console.error("Failed to send reset email", error);

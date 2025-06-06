@@ -1,6 +1,8 @@
+// src/pages/ResetPasswordPage.tsx
+
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import axios from "../api/axios";
+import { authApi } from "../api/axios"; // ✅ Используем authApi
 
 const ResetPasswordPage = () => {
   const [newPassword, setNewPassword] = useState("");
@@ -11,10 +13,13 @@ const ResetPasswordPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token) return alert("Missing token");
+    if (!token) {
+      alert("Missing token");
+      return;
+    }
 
     try {
-      await axios.post("/api/auth/reset-password", {
+      await authApi.post("/api/auth/reset-password", {
         token,
         newPassword,
       });

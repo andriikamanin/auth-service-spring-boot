@@ -1,67 +1,94 @@
-import React from "react";
-import { jwtDecode } from "jwt-decode";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "../api/axios";
-import { getAccessToken } from "../util/tokenStorage";
+import { userApi, authApi } from "../api/axios";
+import { getAccessToken, clearTokens } from "../util/tokenStorage";
+import defaultAvatar from "../assets/avatar.jpg"; // добавь файл в src/assets
 
-type DecodedToken = {
-  sub: string;
-  email: string;
-  roles: string[];
-  iat: number;
-  exp: number;
+type UserProfile = {
+  id: string;
+  email: string | null;
+  nickname: string;
+  bio: string | null;
+  avatarUrl: string | null;
+  roles: string[] | null;
+  publicProfile: boolean;
 };
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const accessToken = getAccessToken();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const decoded: DecodedToken | null = accessToken
-    ? jwtDecode<DecodedToken>(accessToken)
-    : null;
+  const loadProfile = async () => {
+    try {
+      const res = await userApi.get("/api/users/me");
+      setProfile(res.data);
+    } catch (err) {
+      console.error("❌ Failed to load profile", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (getAccessToken()) loadProfile();
+    else setLoading(false);
+  }, []);
 
   const handleLogout = async () => {
     try {
-      if (accessToken) {
-        await axios.post("/api/auth/logout", null, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-      }
-    } catch (error) {
-      console.error("Logout request failed", error);
+      await authApi.post("/api/auth/logout");
+    } catch (err) {
+      console.error("Logout failed", err);
     } finally {
       clearTokens();
       navigate("/login");
     }
   };
 
+  if (loading) return <div className="text-white p-8">Loading...</div>;
+  if (!profile) return <div className="text-white p-8">Unauthorized</div>;
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
       <div className="max-w-md w-full p-8 bg-gray-800 rounded-xl shadow-xl space-y-6">
         <h1 className="text-3xl font-bold text-center">Your Profile</h1>
-        {decoded ? (
-          <div className="space-y-2">
-            <p><strong>Email:</strong> {decoded.email}</p>
-            <p><strong>Roles:</strong> {decoded.roles.join(", ")}</p>
-            <p><strong>User ID:</strong> {decoded.sub}</p>
 
-            <button
-              className="w-full py-2 px-4 bg-purple-500 hover:bg-purple-700 rounded-md text-white font-semibold"
-              onClick={() => navigate("/change-password")}
-            >
-              Change Password
-            </button>
+        <img
+          src={profile.avatarUrl || defaultAvatar}
+          alt="avatar"
+          className="w-32 h-32 rounded-full mx-auto"
+        />
 
-            <button
-              className="w-full mt-2 py-2 px-4 bg-red-500 hover:bg-red-700 rounded-md text-white font-semibold"
-              onClick={handleLogout}
-            >
-              Logout
-            </button>
-          </div>
-        ) : (
-          <p>Invalid or missing token</p>
-        )}
+        <div className="space-y-2 text-sm text-center">
+          <p><strong>Nickname:</strong> {profile.nickname}</p>
+          {profile.email && <p><strong>Email:</strong> {profile.email}</p>}
+          {profile.roles && <p><strong>Roles:</strong> {profile.roles.join(", ")}</p>}
+          {profile.bio && <p><strong>Bio:</strong> {profile.bio}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <button
+            className="w-full py-2 px-4 bg-blue-500 hover:bg-blue-700 rounded-md text-white font-semibold"
+            onClick={() => navigate("/me/edit")}
+          >
+            Edit Profile
+          </button>
+
+          <button
+            className="w-full py-2 px-4 bg-purple-500 hover:bg-purple-700 rounded-md text-white font-semibold"
+            onClick={() => navigate("/change-password")}
+          >
+            Change Password
+          </button>
+
+          <button
+            className="w-full py-2 px-4 bg-red-500 hover:bg-red-700 rounded-md text-white font-semibold"
+            onClick={handleLogout}
+          >
+            Logout
+          </button>
+        </div>
       </div>
     </div>
   );

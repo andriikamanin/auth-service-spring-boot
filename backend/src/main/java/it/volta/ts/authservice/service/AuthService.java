@@ -4,6 +4,7 @@ import it.volta.ts.authservice.config.AppProperties;
 import it.volta.ts.authservice.dto.*;
 import it.volta.ts.authservice.entity.Role;
 import it.volta.ts.authservice.entity.User;
+import it.volta.ts.authservice.kafka.UserKafkaProducer;
 import it.volta.ts.authservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -23,6 +24,7 @@ public class AuthService {
     private final StringRedisTemplate redisTemplate;
     private final AppProperties appProperties;
     private final JwtService jwtService;
+    private final UserKafkaProducer userKafkaProducer;
 
     private static final Duration VERIFICATION_TOKEN_TTL = Duration.ofHours(24);
     private static final Duration REFRESH_TOKEN_TTL = Duration.ofDays(30);
@@ -70,6 +72,7 @@ public class AuthService {
         user.setEmailVerified(true);
         userRepository.save(user);
         redisTemplate.delete("email:verify:" + token);
+        userKafkaProducer.sendUserRegisteredEvent(user);
     }
 
     // Логин

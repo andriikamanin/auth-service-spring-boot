@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "../api/axios";
+import { authApi } from "../api/axios";
 
 const LoginCard = () => {
   const [email, setEmail] = useState("");
@@ -11,17 +11,19 @@ const LoginCard = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.post("/api/auth/login", { email, password });
-      const { accessToken, refreshToken } = response.data;
+      const response = await authApi.post("/api/auth/login", { email, password });
+
+      const { accessToken, refreshToken }: { accessToken: string; refreshToken: string } =
+        response.data;
 
       const storage = rememberMe ? localStorage : sessionStorage;
       storage.setItem("accessToken", accessToken);
       storage.setItem("refreshToken", refreshToken);
 
-      navigate("/profile");
+      navigate("/me");
     } catch (error) {
       console.error("Login failed", error);
-      alert("Invalid credentials or unverified email");
+      alert("Invalid credentials or unverified email.");
     }
   };
 

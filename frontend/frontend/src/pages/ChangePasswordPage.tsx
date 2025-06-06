@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "../api/axios";
+import { authApi } from "../api/axios";
 import { getAccessToken } from "../util/tokenStorage";
+
 const ChangePasswordPage = () => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -11,16 +12,18 @@ const ChangePasswordPage = () => {
     e.preventDefault();
     try {
       const token = getAccessToken();
-      await axios.post(
+      await authApi.post(
         "/api/auth/change-password",
         { currentPassword, newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert("Password changed successfully");
-      navigate("/profile");
-    } catch (error) {
+      navigate("/me");
+    } catch (error: any) {
       console.error("Failed to change password", error);
-      alert("Error changing password");
+      const msg =
+        error?.response?.data?.message || error?.response?.data?.error || "Error changing password";
+      alert(msg);
     }
   };
 
@@ -30,7 +33,7 @@ const ChangePasswordPage = () => {
         <h2 className="text-2xl font-bold text-center">Change Password</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block mb-1">Current Password</label>
+            <label className="block mb-1 text-sm">Current Password</label>
             <input
               type="password"
               value={currentPassword}
@@ -40,7 +43,7 @@ const ChangePasswordPage = () => {
             />
           </div>
           <div>
-            <label className="block mb-1">New Password</label>
+            <label className="block mb-1 text-sm">New Password</label>
             <input
               type="password"
               value={newPassword}
