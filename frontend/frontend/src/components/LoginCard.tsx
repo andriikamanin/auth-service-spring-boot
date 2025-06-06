@@ -85,9 +85,7 @@ const LoginCard = () => {
               />
               <span className="ml-2">Remember me</span>
             </label>
-            <a className="text-sm text-purple-200 hover:underline" href="#">
-              Forgot your password?
-            </a>
+            <Link to="/forgot-password" className="text-sm text-purple-200 hover:underline">Forgot your password? </Link>
           </div>
 
           <button
