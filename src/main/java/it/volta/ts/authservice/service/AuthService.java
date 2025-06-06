@@ -2,18 +2,22 @@ package it.volta.ts.authservice.service;
 
 
 import it.volta.ts.authservice.config.AppProperties;
+import it.volta.ts.authservice.dto.ChangePasswordRequest;
 import it.volta.ts.authservice.dto.LoginRequest;
 import it.volta.ts.authservice.dto.LoginResponse;
 import it.volta.ts.authservice.dto.RegisterRequest;
+import it.volta.ts.authservice.entity.Role;
 import it.volta.ts.authservice.entity.User;
 import it.volta.ts.authservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -43,6 +47,7 @@ public class AuthService {
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
                 .nickname(nickname)
+                .roles(Set.of(Role.USER))
                 .build();
 
         userRepository.save(user);
@@ -96,15 +101,14 @@ public class AuthService {
             throw new IllegalArgumentException("Invalid credentials");
         }
 
-        // Преобразуем Set<Role> в List<String>
-        var roleNames = user.getRoles().stream()
-                .map(Enum::name)
-                .toList();
+        Map<String, Object> claims = Map.of(
+                "roles", user.getRoles().stream().map(Enum::name).toList()
+        );
 
         String accessToken = jwtService.generateAccessToken(
                 user.getId(),
                 user.getEmail(),
-                Map.of("roles", roleNames)
+                claims
         );
 
         String refreshToken = jwtService.generateRefreshToken(user.getId());
@@ -113,5 +117,17 @@ public class AuthService {
         redisTemplate.opsForValue().set(redisKey, refreshToken, Duration.ofDays(30));
 
         return new LoginResponse(accessToken, refreshToken);
+    }
+
+
+    public void changePassword(User user, ChangePasswordRequest request) {
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+
+        redisTemplate.delete("refresh:" + user.getId()); // invalidate refresh token
     }
 }

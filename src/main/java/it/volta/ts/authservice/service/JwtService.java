@@ -28,14 +28,19 @@ public class JwtService {
     }
 
     public String generateAccessToken(UUID userId, String email, Map<String, Object> extraClaims) {
-        return Jwts.builder()
+        JwtBuilder builder = Jwts.builder()
                 .setSubject(userId.toString())
-                .setClaims(extraClaims)
-                .claim("email", email)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRATION))
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
+                .signWith(key, SignatureAlgorithm.HS256);
+
+        if (extraClaims != null) {
+            extraClaims.forEach(builder::claim);
+        }
+
+        builder.claim("email", email);
+
+        return builder.compact();
     }
 
     public String generateRefreshToken(UUID userId) {

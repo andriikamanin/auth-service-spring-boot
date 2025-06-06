@@ -1,14 +1,16 @@
 package it.volta.ts.authservice.controller;
 
 
-import it.volta.ts.authservice.dto.LoginRequest;
-import it.volta.ts.authservice.dto.LoginResponse;
-import it.volta.ts.authservice.dto.RegisterRequest;
-import it.volta.ts.authservice.dto.RegisterResponse;
+import it.volta.ts.authservice.dto.*;
+import it.volta.ts.authservice.entity.User;
+import it.volta.ts.authservice.security.UserPrincipal;
 import it.volta.ts.authservice.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -38,9 +40,25 @@ public class AuthController {
         return ResponseEntity.ok(tokens);
     }
 
+    @PostMapping("/change-password")
+    public ResponseEntity<String> changePassword(
+            Authentication authentication,
+            @RequestBody ChangePasswordRequest request
+    ) {
+        System.out.println("Auth = " + authentication);
+        if (authentication == null || !(authentication.getPrincipal() instanceof UserPrincipal principal)) {
+            return ResponseEntity.status(403).body("Unauthorized or invalid token");
+        }
+
+        System.out.println("Principal = " + principal);
+        System.out.println("User = " + principal.user());
+
+        authService.changePassword(principal.user(), request);
+        return ResponseEntity.ok("Password changed successfully");
+    }
     // В будущем здесь появятся:
     // - /refresh
     // - /logout
     // - /forgot-password
-    // - /reset-password
+
 }
