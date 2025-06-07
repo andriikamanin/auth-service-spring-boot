@@ -24,30 +24,38 @@ public class ProductServiceImpl implements ProductService {
     private final S3Service s3Service;
 
     @Override
-    public ProductDto create(CreateProductRequest request, MultipartFile image) {
-        String imageUrl = request.imageUrl();
-        if (image != null && !image.isEmpty()) {
-            try {
-                imageUrl = s3Service.uploadProductImage(image);
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to upload image", e);
-            }
-        }
-
+    public ProductDto create(CreateProductRequest request, List<MultipartFile> images) {
         Product product = Product.builder()
                 .name(request.name())
                 .description(request.description())
                 .price(request.price())
                 .available(request.available())
-                .imageUrl(imageUrl)
                 .categories(resolveCategories(request.categories()))
                 .build();
+
+        if (images != null && !images.isEmpty()) {
+            List<ProductImage> imageEntities = new ArrayList<>();
+            for (int i = 0; i < images.size(); i++) {
+                MultipartFile file = images.get(i);
+                try {
+                    String url = s3Service.uploadProductImage(file);
+                    imageEntities.add(ProductImage.builder()
+                            .url(url)
+                            .sortOrder(i)
+                            .product(product)
+                            .build());
+                } catch (IOException e) {
+                    throw new RuntimeException("Image upload failed", e);
+                }
+            }
+            product.setImages(imageEntities);
+        }
 
         return toDto(productRepository.save(product));
     }
 
     @Override
-    public ProductDto update(Long id, UpdateProductRequest request, MultipartFile image) {
+    public ProductDto update(Long id, UpdateProductRequest request, List<MultipartFile> images) {
         Product product = productRepository.findById(id).orElseThrow();
 
         if (request.name() != null) product.setName(request.name());
@@ -56,14 +64,26 @@ public class ProductServiceImpl implements ProductService {
         if (request.available() != null) product.setAvailable(request.available());
         if (request.categories() != null) product.setCategories(resolveCategories(request.categories()));
 
-        if (image != null && !image.isEmpty()) {
-            try {
-                product.setImageUrl(s3Service.uploadProductImage(image));
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to upload image", e);
+        if (images != null && !images.isEmpty()) {
+            // Удаляем старые изображения
+            product.getImages().clear();
+
+            List<ProductImage> newImages = new ArrayList<>();
+            for (int i = 0; i < images.size(); i++) {
+                MultipartFile file = images.get(i);
+                try {
+                    String url = s3Service.uploadProductImage(file);
+                    newImages.add(ProductImage.builder()
+                            .url(url)
+                            .sortOrder(i)
+                            .product(product)
+                            .build());
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to upload image", e);
+                }
             }
-        } else if (request.imageUrl() != null) {
-            product.setImageUrl(request.imageUrl());
+
+            product.setImages(newImages);
         }
 
         return toDto(productRepository.save(product));
@@ -95,16 +115,24 @@ public class ProductServiceImpl implements ProductService {
                 .collect(Collectors.toSet());
     }
 
+
+
     private ProductDto toDto(Product product) {
         Set<String> categories = product.getCategories().stream()
                 .map(Category::getName).collect(Collectors.toSet());
+
+        List<String> imageUrls = product.getImages().stream()
+                .sorted(Comparator.comparingInt(ProductImage::getSortOrder))
+                .map(ProductImage::getUrl)
+                .toList();
+
         return new ProductDto(
                 product.getId(),
                 product.getName(),
                 product.getDescription(),
                 product.getPrice(),
                 product.isAvailable(),
-                product.getImageUrl(),
+                imageUrls,
                 categories
         );
     }

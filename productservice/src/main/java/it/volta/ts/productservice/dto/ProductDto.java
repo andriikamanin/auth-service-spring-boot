@@ -1,6 +1,7 @@
 package it.volta.ts.productservice.dto;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Set;
 
 public record ProductDto(
@@ -9,6 +10,6 @@ public record ProductDto(
         String description,
         BigDecimal price,
         boolean available,
-        String imageUrl,
+        List<String> imageUrls, // ✅ заменили imageUrl на список
         Set<String> categories
 ) {}

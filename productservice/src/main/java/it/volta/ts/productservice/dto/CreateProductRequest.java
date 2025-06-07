@@ -12,6 +12,5 @@ public record CreateProductRequest(
         String description,
         @NotNull @DecimalMin("0.0") BigDecimal price,
         boolean available,
-        String imageUrl,
         Set<String> categories
 ) {}

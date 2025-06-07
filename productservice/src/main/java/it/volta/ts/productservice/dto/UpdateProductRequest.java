@@ -8,6 +8,5 @@ public record UpdateProductRequest(
         String description,
         BigDecimal price,
         Boolean available,
-        String imageUrl,
         Set<String> categories
 ) {}
