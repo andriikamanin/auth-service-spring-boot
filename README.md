@@ -1,6 +1,6 @@
-# 🛡️ Auth Service – Spring Boot Microservice
+# My social network
 
-A complete authentication microservice built with **Spring Boot**, **PostgreSQL**, **Redis**, and **Mailtrap SMTP**. Designed for integration into a microservices architecture.
+
 
 ---
 
@@ -10,10 +10,12 @@ A complete authentication microservice built with **Spring Boot**, **PostgreSQL*
 - 📧 Email delivery via Mailtrap SMTP
 - 🔐 JWT authentication (Access + Refresh tokens)
 - 🔁 Access token refreshing with refresh token
+- 🔓 Logout with refresh token invalidation
 - 🛠 Password change (requires current password)
 - 🧠 Password recovery and reset
-- 🔓 Logout with refresh token invalidation
 - 🔒 Route protection using `@AuthenticationPrincipal`, `@PreAuthorize`
+- 📨 Double email confirmation flow before changing email
+- 📬 Kafka events for user registration, login, email update
 - 📦 `.env` support with `java-dotenv`
 - 🐳 Docker setup for PostgreSQL and Redis
 
@@ -24,10 +26,11 @@ A complete authentication microservice built with **Spring Boot**, **PostgreSQL*
 - Java 17+
 - Spring Boot 3+
 - Spring Security 6
-- PostgreSQL
+- Spring Data JPA (PostgreSQL)
 - Redis
-- Mailtrap (SMTP sandbox)
-- JWT
+- Kafka
+- Mailtrap SMTP
+- JWT (JSON Web Tokens)
 - Docker / Docker Compose
 
 ---
@@ -37,11 +40,9 @@ A complete authentication microservice built with **Spring Boot**, **PostgreSQL*
 ### 1. Clone the Repository
 
 ```bash
-https://github.com/andriikamanin/auth-service-spring-boot.git
-cd auth-service-spring-boot
+git clone https://github.com/your-org/auth-service.git
+cd auth-service
 ```
-
----
 
 ### 2. Create `.env` file
 
@@ -49,46 +50,37 @@ cd auth-service-spring-boot
 cp .env.example .env
 ```
 
-Then configure your environment variables:
+Edit `.env` with the appropriate values:
 
 ```env
-# PostgreSQL
 DB_URL=jdbc:postgresql://localhost:15432/auth_db
 DB_USERNAME=postgres
 DB_PASSWORD=postgres
 
-# Redis
 REDIS_HOST=localhost
 REDIS_PORT=6379
 
-# JWT
-JWT_SECRET=your_long_secret_key_here
+JWT_SECRET=your_very_secure_secret_key
 
-# Mailtrap
 MAIL_HOST=sandbox.smtp.mailtrap.io
 MAIL_PORT=2525
 MAIL_USERNAME=your_mailtrap_username
 MAIL_PASSWORD=your_mailtrap_password
 MAIL_FROM=no-reply@yourapp.com
 
-# URLs
 BACKEND_BASE_URL=http://localhost:8080
 FRONTEND_BASE_URL=http://localhost:3000
 
-# JWT Secret
-JWT_SECRET=YourVerySecureSecretKeyThatShouldBeLongEnough123
+KAFKA_BOOTSTRAP_SERVERS=localhost:9092
 ```
 
 ---
 
-### 3. Run PostgreSQL & Redis via Docker
+### 3. Run PostgreSQL, Redis & Kafka with Docker
 
 ```bash
 docker compose up -d
 ```
-
-- PostgreSQL: `localhost:15432`
-- Redis: `localhost:6379`
 
 ---
 
@@ -106,16 +98,6 @@ mvn spring-boot:run
 
 ---
 
-## 📬 Email Testing (Mailtrap)
-
-1. Go to [Mailtrap.io](https://mailtrap.io/)
-2. Create an inbox
-3. Copy SMTP credentials and paste into `.env`
-
-All confirmation/reset emails will appear in Mailtrap.
-
----
-
 ## 🔐 Auth Endpoints
 
 | Method | Path | Description |
@@ -126,84 +108,11 @@ All confirmation/reset emails will appear in Mailtrap.
 | POST | `/api/auth/change-password` | Change password |
 | POST | `/api/auth/forgot-password` | Send password reset email |
 | POST | `/api/auth/reset-password?token=` | Reset password |
-| POST | `/api/auth/refresh` | Get new access token |
-| POST | `/api/auth/logout` | Logout (invalidate refresh token) |
-
----
-
-## 📦 Example Usage
-
-### Register
-
-```http
-POST /api/auth/register
-Content-Type: application/json
-
-{
-  "email": "test@example.com",
-  "password": "Test1234!"
-}
-```
-
-Response:
-
-```json
-{
-  "message": "Registration successful. Please check your email to confirm."
-}
-```
-
----
-
-### Login
-
-```http
-POST /api/auth/login
-{
-  "email": "test@example.com",
-  "password": "Test1234!"
-}
-```
-
-Response:
-
-```json
-{
-  "accessToken": "...",
-  "refreshToken": "..."
-}
-```
-
----
-
-### Refresh Token
-
-```http
-POST /api/auth/refresh
-{
-  "refreshToken": "..."
-}
-```
-
----
-
-### Logout
-
-```http
-POST /api/auth/logout
-{
-  "refreshToken": "..."
-}
-```
-
----
-
-### Protected Request Example
-
-```http
-GET /api/users/me
-Authorization: Bearer {accessToken}
-```
+| POST | `/api/auth/refresh` | Refresh access token |
+| POST | `/api/auth/logout` | Logout |
+| POST | `/api/auth/change-email/request-old` | Send code to old email |
+| POST | `/api/auth/change-email/request-new` | Send code to new email |
+| POST | `/api/auth/change-email/confirm` | Confirm and update email |
 
 ---
 
@@ -211,25 +120,85 @@ Authorization: Bearer {accessToken}
 
 ```
 src/
-├── controller/
-├── service/
-├── entity/
-├── dto/
 ├── config/
+├── controller/
+├── dto/
+├── entity/
+├── kafka/
 ├── repository/
 ├── security/
+├── service/
+├── util/
 ```
 
 ---
 
-## ⚠️ Environment Security
+## 📬 Kafka Integration
 
-Make sure `.env` is listed in `.gitignore`:
+- `user.registered`: Published on registration.
+- `user.login`: Published on login (contains IP, agent, timestamp).
+- `user.emailChanged`: Published on successful email change.
+
+---
+
+## 🧪 Email Testing
+
+Use [Mailtrap.io](https://mailtrap.io) to simulate inbox and email verification flows.
+
+---
+
+## ✅ Example Usage: Change Email Flow
+
+1. Send code to old email:
+
+```http
+POST /api/auth/change-email/request-old
+Authorization: Bearer {accessToken}
+```
+
+2. Send code to new email:
+
+```http
+POST /api/auth/change-email/request-new
+Authorization: Bearer {accessToken}
+{
+  "newEmail": "new@example.com"
+}
+```
+
+3. Confirm both codes:
+
+```http
+POST /api/auth/change-email/confirm
+Authorization: Bearer {accessToken}
+{
+  "oldEmailCode": "123456",
+  "newEmailCode": "654321"
+}
+```
+
+---
+
+## 📦 Docker Compose
+
+Includes PostgreSQL, Redis, and Kafka:
 
 ```bash
+docker compose up
+```
+
+---
+
+## 📁 .env Security
+
+Make sure `.env` is in `.gitignore`:
+
+```
 .env
 ```
 
 ---
 
+## 📄 License
 
+MIT License – feel free to use and modify!
