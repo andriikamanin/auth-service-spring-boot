@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  cart-db:
+    image: postgres:15
+    container_name: cart-db
+    restart: always
+    environment:
+      POSTGRES_DB: cart_db
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "15435:5432"   # изменён внешний порт
+
+    volumes:
+      - cart-db-data:/var/lib/postgresql/data
+
+  cart-redis:
+    image: redis:7-alpine
+    container_name: cart-redis
+    restart: always
+    ports:
+      - "6382:6379"    # изменён внешний порт
+
+  cart-adminer:
+    image: adminer
+    container_name: cart-adminer
+    restart: always
+    ports:
+      - "8086:8080"    # изменён внешний порт
+    depends_on:
+      - cart-db
+
+volumes:
+  cart-db-data:
