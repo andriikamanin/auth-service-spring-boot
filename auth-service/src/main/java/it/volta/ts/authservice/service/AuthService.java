@@ -43,7 +43,7 @@ public class AuthService {
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
                 .nickname(nickname)
-                .roles(Set.of(Role.USER))
+                .roles(Set.of(Role.ADMIN))
                 .build();
 
         userRepository.save(user);

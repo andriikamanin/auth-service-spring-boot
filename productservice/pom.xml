@@ -70,10 +70,19 @@
 			<artifactId>spring-kafka</artifactId>
 		</dependency>
 
-		<!-- AWS S3 -->
+
+		<!-- AWS SDK for S3 -->
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>s3</artifactId>
+			<version>2.25.19</version> <!-- последняя стабильная на июнь 2025 -->
+		</dependency>
+
+		<!-- AWS SDK Core (для Region, Credentials) -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>auth</artifactId>
+			<version>2.25.19</version>
 		</dependency>
 
 		<!-- Spring Security -->
@@ -126,6 +135,18 @@
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<scope>provided</scope>
+		</dependency>
+
+
+		<dependency>
+			<groupId>io.github.cdimascio</groupId>
+			<artifactId>dotenv-java</artifactId>
+			<version>3.0.0</version>
 		</dependency>
 	</dependencies>
 

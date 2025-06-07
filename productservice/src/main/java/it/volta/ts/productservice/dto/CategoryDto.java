@@ -1,4 +1,3 @@
 package it.volta.ts.productservice.dto;
 
-public class CategoryDto {
-}
+public record CategoryDto(Long id, String name) {}
