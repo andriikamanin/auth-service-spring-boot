@@ -64,27 +64,55 @@ public class ProductServiceImpl implements ProductService {
         if (request.available() != null) product.setAvailable(request.available());
         if (request.categories() != null) product.setCategories(resolveCategories(request.categories()));
 
-        if (images != null && !images.isEmpty()) {
-            // Удаляем старые изображения
-            product.getImages().clear();
+        List<ProductImage> updatedImages = new ArrayList<>();
 
-            List<ProductImage> newImages = new ArrayList<>();
+        // Сохраняем необходимые старые изображения и удаляем ненужные из S3
+        Set<String> existingUrls = request.existingImageUrls() != null
+                ? new HashSet<>(request.existingImageUrls())
+                : Set.of();
+
+        // Удаляем из S3 те, что не нужны
+        for (ProductImage oldImage : product.getImages()) {
+            if (!existingUrls.contains(oldImage.getUrl())) {
+                s3Service.deleteProductImageByUrl(oldImage.getUrl());
+            }
+        }
+
+        // Добавляем старые изображения в том порядке, в котором пришли в existingImageUrls
+        if (request.existingImageUrls() != null) {
+            for (int i = 0; i < request.existingImageUrls().size(); i++) {
+                final int sortOrder = i; // <-- сделано final
+                String url = request.existingImageUrls().get(i);
+                product.getImages().stream()
+                        .filter(img -> img.getUrl().equals(url))
+                        .findFirst()
+                        .ifPresent(img -> {
+                            img.setSortOrder(sortOrder);
+                            updatedImages.add(img);
+                        });
+            }
+        }
+
+        // Добавляем новые изображения, сортOrder продолжается после старых
+        if (images != null && !images.isEmpty()) {
+            int startOrder = updatedImages.size();
             for (int i = 0; i < images.size(); i++) {
                 MultipartFile file = images.get(i);
                 try {
                     String url = s3Service.uploadProductImage(file);
-                    newImages.add(ProductImage.builder()
+                    updatedImages.add(ProductImage.builder()
                             .url(url)
-                            .sortOrder(i)
+                            .sortOrder(startOrder + i)
                             .product(product)
                             .build());
                 } catch (IOException e) {
-                    throw new RuntimeException("Failed to upload image", e);
+                    throw new RuntimeException("Image upload failed", e);
                 }
             }
-
-            product.setImages(newImages);
         }
+
+        product.getImages().clear();
+        product.getImages().addAll(updatedImages);
 
         return toDto(productRepository.save(product));
     }

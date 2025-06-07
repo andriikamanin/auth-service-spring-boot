@@ -1,6 +1,7 @@
 package it.volta.ts.productservice.dto;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Set;
 
 public record UpdateProductRequest(
@@ -8,5 +9,6 @@ public record UpdateProductRequest(
         String description,
         BigDecimal price,
         Boolean available,
-        Set<String> categories
+        Set<String> categories,
+        List<String> existingImageUrls
 ) {}
