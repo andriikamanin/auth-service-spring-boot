@@ -11,6 +11,7 @@ import EditProfilePage from "./pages/EditProfilePage";
 import SearchProfilePage from "./pages/SearchProfilePage";
 import HomePage from "./pages/HomePage";
 import PublicProfilePage from "./pages/PublicProfilePage";
+import ProfileSettingsPage from "./pages/ProfileSettingsPage";
 
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
         <Route path="/search" element={<SearchProfilePage />} />
         <Route path="/" element={<HomePage />} />
         <Route path="/u/:nickname" element={<PublicProfilePage />} />
+        <Route path="/me/settings" element={<ProfileSettingsPage />} />
       </Routes>
     </Router>
   );
@@ -39,6 +41,7 @@ function App() {
 
 
 export default App;
+
 
 
 

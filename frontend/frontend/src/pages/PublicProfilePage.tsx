@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { getPublicProfile } from "../api/user";
 import defaultAvatar from "../assets/avatar.jpg";
 
@@ -11,6 +11,7 @@ type UserProfile = {
 
 const PublicProfilePage = () => {
   const { nickname } = useParams();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -18,7 +19,7 @@ const PublicProfilePage = () => {
     if (!nickname) return;
     getPublicProfile(nickname)
       .then(setProfile)
-      .catch((err: any ) => {
+      .catch((err: any) => {
         console.error("User not found", err);
         setProfile(null);
       })
@@ -30,7 +31,15 @@ const PublicProfilePage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
-      <div className="max-w-md w-full bg-gray-800 p-8 rounded-xl shadow space-y-6 text-center">
+      <div className="max-w-md w-full bg-gray-800 p-8 rounded-xl shadow space-y-6 text-center relative">
+        {/* Кнопка "Назад" */}
+        <button
+          onClick={() => navigate(-1)}
+          className="absolute left-4 top-4 text-white text-xl hover:text-purple-400"
+        >
+          ← Back
+        </button>
+
         <h1 className="text-3xl font-bold">Public Profile</h1>
         <img
           src={profile.avatarUrl || defaultAvatar}

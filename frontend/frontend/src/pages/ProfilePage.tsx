@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { userApi, authApi } from "../api/axios";
 import { getAccessToken, clearTokens } from "../util/tokenStorage";
-import defaultAvatar from "../assets/avatar.jpg"; // добавь файл в src/assets
+import defaultAvatar from "../assets/avatar.jpg";
 
 type UserProfile = {
   id: string;
@@ -50,8 +50,15 @@ const ProfilePage = () => {
   if (!profile) return <div className="text-white p-8">Unauthorized</div>;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
-      <div className="max-w-md w-full p-8 bg-gray-800 rounded-xl shadow-xl space-y-6">
+    <div className="min-h-screen bg-gray-900 text-white p-6 relative">
+      <button
+        onClick={() => navigate(-1)}
+        className="absolute left-6 top-6 text-white text-xl hover:text-purple-400"
+      >
+        ← Back
+      </button>
+
+      <div className="max-w-md mx-auto mt-12 p-8 bg-gray-800 rounded-xl shadow-xl space-y-6">
         <h1 className="text-3xl font-bold text-center">Your Profile</h1>
 
         <img

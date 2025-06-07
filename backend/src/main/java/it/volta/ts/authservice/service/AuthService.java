@@ -6,12 +6,14 @@ import it.volta.ts.authservice.entity.Role;
 import it.volta.ts.authservice.entity.User;
 import it.volta.ts.authservice.kafka.UserKafkaProducer;
 import it.volta.ts.authservice.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -75,8 +77,9 @@ public class AuthService {
         userKafkaProducer.sendUserRegisteredEvent(user);
     }
 
+
     // Логин
-    public LoginResponse login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request, HttpServletRequest httpRequest) {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
 
@@ -97,9 +100,18 @@ public class AuthService {
 
         redisTemplate.opsForValue().set("refresh:" + user.getId(), refreshToken, REFRESH_TOKEN_TTL);
 
+        // 🔁 Отправка события логина в Kafka
+        userKafkaProducer.sendUserLoginEvent(
+                UserLoginEvent.builder()
+                        .userId(user.getId())
+                        .ip(httpRequest.getRemoteAddr())
+                        .userAgent(httpRequest.getHeader("User-Agent"))
+                        .timestamp(LocalDateTime.now())
+                        .build()
+        );
+
         return new LoginResponse(accessToken, refreshToken);
     }
-
     // Смена пароля
     public void changePassword(User user, ChangePasswordRequest request) {
         if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {

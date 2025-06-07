@@ -5,6 +5,7 @@ import it.volta.ts.authservice.dto.*;
 import it.volta.ts.authservice.entity.User;
 import it.volta.ts.authservice.security.UserPrincipal;
 import it.volta.ts.authservice.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -34,9 +35,10 @@ public class AuthController {
         return ResponseEntity.ok("Email successfully verified!");
     }
 
+
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
-        LoginResponse tokens = authService.login(request);
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+        LoginResponse tokens = authService.login(request, httpRequest);
         return ResponseEntity.ok(tokens);
     }
 

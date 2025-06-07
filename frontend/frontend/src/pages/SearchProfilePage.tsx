@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { searchProfiles } from "../api/user";
 import defaultAvatar from "../assets/avatar.jpg";
 
@@ -14,6 +14,7 @@ const SearchProfilePage = () => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,8 +33,15 @@ const SearchProfilePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-6">
-      <div className="max-w-xl mx-auto">
+    <div className="min-h-screen bg-gray-900 text-white p-6 relative">
+      <button
+        onClick={() => navigate(-1)}
+        className="absolute left-6 top-6 text-white text-xl hover:text-purple-400"
+      >
+        ← Back
+      </button>
+
+      <div className="max-w-xl mx-auto pt-12">
         <h1 className="text-3xl font-bold mb-6 text-center">Search Profiles</h1>
         <form onSubmit={handleSearch} className="flex mb-6">
           <input

@@ -22,6 +22,12 @@ const HomePage = () => {
           >
             Search Profile
           </Link>
+          <Link
+            to="/me/settings"
+            className="block py-2 px-6 bg-gray-600 hover:bg-gray-700 rounded-md font-semibold"
+          >
+            ⚙️ Profile Settings
+          </Link>
         </div>
       </div>
     </div>
